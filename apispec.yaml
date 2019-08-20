@@ -1,0 +1,381 @@
+openapi: 3.0.0
+# Added by API Auto Mocking Plugin
+servers:
+# Added by API Auto Mocking Plugin
+  - description: SwaggerHub API Auto Mocking
+    url: https://virtserver.swaggerhub.com/pacharrin/OpenPaymentsService/1.0.0
+  - description: SwaggerHub API Auto Mocking
+    url: https://virtserver.swaggerhub.com/pacharrin/PaymentsHub/v1.0
+  - description: production
+    url: https://payments.aurohub.com/v1.0
+  - description: sandbox
+    url: https://payments.aurosandbox.com/v1.0
+info:
+  description: The OpenPaymentsService API is an unified interface between banking institutions and service integrators so that the end costumer can pay any service or bill.
+  version: "1.0.0"
+  title: OpenPaymentsService API
+  contact:
+    email: acervantes@auronix.com
+    name: Alexis Cervantes
+    url: https://github.com/Aurotek/open-payments-service-spec
+  license:
+    name: Apache 2.0
+    url: 'http://www.apache.org/licenses/LICENSE-2.0.html'
+tags:
+  - name: services
+    description: Get info about available services
+  - name: payments
+    description: Manage payments
+paths:
+  /services:
+    get:
+      tags:
+        - services
+      summary: Collection of available services 
+      operationId: listServices
+      description: |
+        Return a collection of all the services available for the user who made the petition
+        This requests accept parameters for pagination
+      parameters:
+        - in: query
+          name: skip
+          description: number of records to skip for pagination
+          schema:
+            type: integer
+            format: int32
+            minimum: 0
+        - in: query
+          name: limit
+          description: maximum number of records to return
+          schema:
+            type: integer
+            format: int32
+            minimum: 0
+            maximum: 50
+      responses:
+        '200':
+          description: Return collection of all available services
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Service'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Unexpected'
+  /services/{serviceId}:
+    get:
+      tags: 
+        - services
+      operationId: getService
+      summary: Get details of the specified service.
+      description: |
+        Return an object with all the details of the service with id ```{ServiceId}``` 
+      parameters:
+        - $ref: '#/components/parameters/ServiceId'
+      responses:
+        '200': 
+          description: A service object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Service'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Unexpected'
+  /services/{serviceId}/balance:
+    get:
+      tags: 
+        - payments
+      operationId: getBalance
+      summary: Get amount due of the specified service for the referenced client.
+      description: |
+        Some services allow to request the current balance, this request must be done before the payment
+      parameters:
+        - $ref: '#/components/parameters/ServiceId'
+        - $ref: '#/components/parameters/Reference'
+        - $ref: '#/components/parameters/Extra'
+      responses:
+        '200': 
+          description: a balance object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Balance'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Unexpected'
+  /services/{serviceId}/payment:
+    post:
+      tags: 
+        - payments
+      operationId: createPayment
+      summary: Creates a payment instruction for the specified service
+      description: |
+        This petition is used to process a payment of the specified service.
+      parameters:
+        - $ref: '#/components/parameters/ServiceId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentRequest'
+        description: Payment item to process
+      responses:
+        '201':
+          description: payment created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payment'
+        '400':
+          description: 'invalid input, object invalid'
+        '409':
+          description: an existing payment already exists with the exact same values
+  /payments/{paymentId}:
+    get:
+      tags: 
+        - payments
+      operationId: getPayment
+      summary: gets the details of a payment
+      description: |
+        you can use this petition to get the latest status of a previous response
+      parameters:
+        - $ref: '#/components/parameters/PaymentId'
+      responses:
+        '200': 
+          description: a payment object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payment'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Unexpected'  
+      
+components:
+  parameters:
+    ServiceId:
+      in: path
+      name: serviceId
+      description: Identifies the service.
+      required: true
+      schema:
+        type: string
+    PaymentId:
+      in: path
+      name: paymentId
+      description: UUID of the payment.
+      required: true
+      schema:
+        type: string
+        format: uuid
+    Reference:
+      in: query
+      name: reference
+      description: primary Reference for a service
+      required: true
+      schema:
+        type: string
+    Extra:
+      in: query
+      name: extra
+      description: extra fields to reference a service
+      required: false
+      schema:
+        type: array
+        items: 
+          type: string
+      style: deepObject
+      explode: true
+  responses:
+    BadRequest:
+      description: Bad request.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Forbidden: 
+      description: Forbidden, you are not authorized to retrieve this resource.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Unauthorized, Authorization information is missing or invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: The specified resource was not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unexpected:
+      description: Unexpected error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    PaymentResponse:
+      description: Payment reponse
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Payment'
+  schemas:
+    Service:
+      type: object
+      additionalProperties: true
+      required:
+        - id
+        - name
+        - description
+        - offer_consultation
+        - partial_payments
+        - overdue_payments
+        - inputs
+      properties:
+        id:
+          type: integer
+          example: 15
+        name:
+          type: string
+          example: ACN
+        description:
+          type: string
+          example: 'pago de cuenta de ACN'
+        offer_consultation:
+          type: boolean
+        partial_payments:
+          type: boolean
+        overdue_payments:
+          type: boolean
+        aplication:
+          type: string
+          example: '24 - 48 hrs'
+        clarifications: 
+          type: string
+          example: '1 a 5 días hábiles'
+        params:
+          type: array
+          items:
+            $ref: '#/components/schemas/Param'
+    Balance:
+      type: object
+      additionalProperties: true
+      properties:
+        code: 
+          type: string
+        message:
+          type: string
+        amount_due:
+          type: integer
+          description: amount due in cents
+        due_date:
+          type: string
+          format: date-time
+          description: due Date in format defined by RFC 3339, section 5.6. for example 2017-07-21T17:32:28Z
+    PaymentRequest:
+      required:
+        - reference
+        - amount
+      properties:
+        reference:
+          type: string
+          example: 555512272507
+          description: primary refence of the client, any other field required defined should be send inside the extra field
+        amount:
+          type: integer
+          description: ammount to pay in cents
+          example: 18990
+        extra:
+          type: object
+          additionalProperties: true
+          example: 
+            sucursal: miramontes
+    Payment:
+      properties:
+        payment_id:
+          type: string
+          format: uuid
+          description: unique identifier of the payment
+        reference:
+          type: string
+          example: 555512272507
+          description: reference
+        amount:
+          type: integer
+          example: 109000
+          description: ammount paid in cents
+        status:
+          type: string
+          enum: [pending, approved, rejected, cancelled, error]
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+      required:
+        - code
+        - message
+    Param:
+      required:
+        - name
+        - description
+        - param_type
+        - data_type
+        - required
+      properties:
+        name:
+          type: string
+          example: monto
+        description:
+          type: string
+          example: Monto de la transacción
+        input_type:
+          type: string
+          enum: [input, output]
+        data_type:
+          type: string
+          enum:
+            - string
+            - integer
+            - boolean
+            - array
+            - object
+        required:
+          type: boolean
