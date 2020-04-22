@@ -1,0 +1,524 @@
+{
+  "openapi" : "3.0.0",
+  "info" : {
+    "title" : "OpenPaymentsService API",
+    "description" : "The OpenPaymentsService API is an unified interface between banking institutions and service integrators so that the end costumer can pay any service or bill.",
+    "contact" : {
+      "name" : "Alexis Cervantes",
+      "url" : "https://github.com/Aurotek/open-payments-service-spec",
+      "email" : "acervantes@auronix.com"
+    },
+    "license" : {
+      "name" : "Apache 2.0",
+      "url" : "http://www.apache.org/licenses/LICENSE-2.0.html"
+    },
+    "version" : "1.0.0"
+  },
+  "servers" : [ {
+    "url" : "https://virtserver.swaggerhub.com/pacharrin/OpenPaymentsService/1.0.0",
+    "description" : "SwaggerHub API Auto Mocking"
+  }, {
+    "url" : "https://quickpay.yggs.io/api/v1",
+    "description" : "sandbox"
+  } ],
+  "tags" : [ {
+    "name" : "services",
+    "description" : "Get info about available services"
+  }, {
+    "name" : "payments",
+    "description" : "Manage payments"
+  } ],
+  "paths" : {
+    "/services" : {
+      "get" : {
+        "tags" : [ "services" ],
+        "summary" : "Collection of available services",
+        "description" : "Return a collection of all the services available for the user who made the petition\nThis requests accept parameters for pagination\n",
+        "operationId" : "listServices",
+        "parameters" : [ {
+          "name" : "skip",
+          "in" : "query",
+          "description" : "number of records to skip for pagination",
+          "required" : false,
+          "style" : "form",
+          "explode" : true,
+          "schema" : {
+            "minimum" : 0,
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }, {
+          "name" : "limit",
+          "in" : "query",
+          "description" : "maximum number of records to return",
+          "required" : false,
+          "style" : "form",
+          "explode" : true,
+          "schema" : {
+            "maximum" : 5E+1,
+            "minimum" : 0,
+            "type" : "integer",
+            "format" : "int32"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Return collection of all available services",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/Service"
+                  }
+                }
+              }
+            }
+          },
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthorized"
+          },
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
+          },
+          "default" : {
+            "$ref" : "#/components/responses/Unexpected"
+          }
+        }
+      }
+    },
+    "/services/{serviceId}" : {
+      "get" : {
+        "tags" : [ "services" ],
+        "summary" : "Get details of the specified service.",
+        "description" : "Return an object with all the details of the service with id ```{ServiceId}``` \n",
+        "operationId" : "getService",
+        "parameters" : [ {
+          "$ref" : "#/components/parameters/ServiceId"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "A service object",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Service"
+                }
+              }
+            }
+          },
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthorized"
+          },
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
+          },
+          "default" : {
+            "$ref" : "#/components/responses/Unexpected"
+          }
+        }
+      }
+    },
+    "/services/{serviceId}/balance" : {
+      "get" : {
+        "tags" : [ "payments" ],
+        "summary" : "Get amount due of the specified service for the referenced client.",
+        "description" : "Some services allow to request the current balance, this request must be done before the payment\n",
+        "operationId" : "getBalance",
+        "parameters" : [ {
+          "$ref" : "#/components/parameters/ServiceId"
+        }, {
+          "$ref" : "#/components/parameters/Reference"
+        }, {
+          "$ref" : "#/components/parameters/Extra"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "a balance object",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Balance"
+                }
+              }
+            }
+          },
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthorized"
+          },
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
+          },
+          "default" : {
+            "$ref" : "#/components/responses/Unexpected"
+          }
+        }
+      }
+    },
+    "/services/{serviceId}/payment" : {
+      "post" : {
+        "tags" : [ "payments" ],
+        "summary" : "Creates a payment instruction for the specified service",
+        "description" : "This petition is used to process a payment of the specified service.\n",
+        "operationId" : "createPayment",
+        "parameters" : [ {
+          "$ref" : "#/components/parameters/ServiceId"
+        } ],
+        "requestBody" : {
+          "description" : "Payment item to process",
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/PaymentRequest"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "201" : {
+            "description" : "payment created",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Payment"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "invalid input, object invalid"
+          },
+          "409" : {
+            "description" : "an existing payment already exists with the exact same values"
+          }
+        }
+      }
+    },
+    "/payments/{paymentId}" : {
+      "get" : {
+        "tags" : [ "payments" ],
+        "summary" : "gets the details of a payment",
+        "description" : "you can use this petition to get the latest status of a previous response\n",
+        "operationId" : "getPayment",
+        "parameters" : [ {
+          "$ref" : "#/components/parameters/PaymentId"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "a payment object",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Payment"
+                }
+              }
+            }
+          },
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthorized"
+          },
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
+          },
+          "default" : {
+            "$ref" : "#/components/responses/Unexpected"
+          }
+        }
+      }
+    }
+  },
+  "components" : {
+    "schemas" : {
+      "Service" : {
+        "required" : [ "description", "id", "inputs", "name", "offer_consultation", "overdue_payments", "partial_payments" ],
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "integer",
+            "example" : 15
+          },
+          "name" : {
+            "type" : "string",
+            "example" : "ACN"
+          },
+          "description" : {
+            "type" : "string",
+            "example" : "pago de cuenta de ACN"
+          },
+          "offer_consultation" : {
+            "type" : "boolean"
+          },
+          "partial_payments" : {
+            "type" : "boolean"
+          },
+          "overdue_payments" : {
+            "type" : "boolean"
+          },
+          "aplication" : {
+            "type" : "string",
+            "example" : "24 - 48 hrs"
+          },
+          "clarifications" : {
+            "type" : "string",
+            "example" : "1 a 5 días hábiles"
+          },
+          "params" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/Param"
+            }
+          }
+        },
+        "additionalProperties" : true
+      },
+      "Balance" : {
+        "type" : "object",
+        "properties" : {
+          "code" : {
+            "type" : "string"
+          },
+          "message" : {
+            "type" : "string"
+          },
+          "amount_due" : {
+            "type" : "integer",
+            "description" : "amount due in cents"
+          },
+          "due_date" : {
+            "type" : "string",
+            "description" : "due Date in format defined by RFC 3339, section 5.6. for example 2017-07-21T17:32:28Z",
+            "format" : "date-time"
+          }
+        },
+        "additionalProperties" : true
+      },
+      "PaymentRequest" : {
+        "required" : [ "amount", "reference" ],
+        "properties" : {
+          "reference" : {
+            "type" : "string",
+            "description" : "primary refence of the client, any other field required defined should be send inside the extra field",
+            "example" : "555512272506"
+          },
+          "amount" : {
+            "type" : "integer",
+            "description" : "ammount to pay in cents",
+            "example" : 18990
+          },
+          "authorization_id" : {
+            "type" : "string",
+            "description" : "you optionally send an authorization  id to match this payment with the internal autorization of the transaction",
+            "example" : "2019090118452355123456"
+          },
+          "extra" : {
+            "type" : "object",
+            "additionalProperties" : true,
+            "example" : {
+              "sucursal" : "miramontes"
+            }
+          }
+        }
+      },
+      "Payment" : {
+        "properties" : {
+          "payment_id" : {
+            "type" : "string",
+            "description" : "unique identifier of the payment",
+            "format" : "uuid"
+          },
+          "reference" : {
+            "type" : "string",
+            "description" : "reference",
+            "example" : "555512272507"
+          },
+          "amount" : {
+            "type" : "integer",
+            "description" : "ammount paid in cents",
+            "example" : 109000
+          },
+          "authorization_id" : {
+            "type" : "string",
+            "description" : "this fields returns the same authorization id that was send in the payment request",
+            "example" : "2019090118452355123456"
+          },
+          "status" : {
+            "type" : "string",
+            "enum" : [ "pending", "approved", "rejected", "cancelled", "error" ]
+          }
+        }
+      },
+      "Error" : {
+        "required" : [ "code", "message" ],
+        "type" : "object",
+        "properties" : {
+          "code" : {
+            "type" : "string"
+          },
+          "message" : {
+            "type" : "string"
+          }
+        }
+      },
+      "Param" : {
+        "required" : [ "data_type", "description", "name", "param_type", "required" ],
+        "properties" : {
+          "name" : {
+            "type" : "string",
+            "example" : "monto"
+          },
+          "description" : {
+            "type" : "string",
+            "example" : "Monto de la transacción"
+          },
+          "input_type" : {
+            "type" : "string",
+            "enum" : [ "input", "output" ]
+          },
+          "data_type" : {
+            "type" : "string",
+            "enum" : [ "string", "integer", "boolean", "array", "object" ]
+          },
+          "required" : {
+            "type" : "boolean"
+          }
+        }
+      }
+    },
+    "responses" : {
+      "BadRequest" : {
+        "description" : "Bad request.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Forbidden" : {
+        "description" : "Forbidden, you are not authorized to retrieve this resource.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Unauthorized" : {
+        "description" : "Unauthorized, Authorization information is missing or invalid.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "NotFound" : {
+        "description" : "The specified resource was not found",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Unexpected" : {
+        "description" : "Unexpected error",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "PaymentResponse" : {
+        "description" : "Payment reponse",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/Payment"
+            }
+          }
+        }
+      }
+    },
+    "parameters" : {
+      "ServiceId" : {
+        "name" : "serviceId",
+        "in" : "path",
+        "description" : "Identifies the service.",
+        "required" : true,
+        "style" : "simple",
+        "explode" : false,
+        "schema" : {
+          "type" : "string"
+        }
+      },
+      "PaymentId" : {
+        "name" : "paymentId",
+        "in" : "path",
+        "description" : "UUID of the payment.",
+        "required" : true,
+        "style" : "simple",
+        "explode" : false,
+        "schema" : {
+          "type" : "string",
+          "format" : "uuid"
+        }
+      },
+      "Reference" : {
+        "name" : "reference",
+        "in" : "query",
+        "description" : "primary Reference for a service",
+        "required" : true,
+        "style" : "form",
+        "explode" : true,
+        "schema" : {
+          "type" : "string"
+        }
+      },
+      "Extra" : {
+        "name" : "extra",
+        "in" : "query",
+        "description" : "extra fields to reference a service",
+        "required" : false,
+        "style" : "deepObject",
+        "explode" : true,
+        "schema" : {
+          "type" : "array",
+          "items" : {
+            "type" : "string"
+          }
+        }
+      }
+    }
+  }
+}
